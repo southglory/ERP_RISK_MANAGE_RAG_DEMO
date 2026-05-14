@@ -1,0 +1,38 @@
+# 내부감사 부정탐지 — 거래 속도 이상(Velocity) 감지
+
+내부감사 부정탐지 기법: 거래 속도(Velocity) 이상 감지
+
+개념:
+단기간 내 동일 벤더·계정·사용자에 대한 거래 건수 또는 금액이 비정상적으로 급증하는 패턴.
+분기말·월말에 집중되는 속도 이상은 기간귀속(Period-cut-off) 오류 또는 부정의 신호.
+
+탐지 지표:
+1. 기간별 건수 비교:
+   이전 동기 대비 2배 이상 증가 → 이상 경보
+   예: 1분기 월평균 거래 건수 50건 → 2분기 3월 100건 이상 → 속도 이상
+
+2. 분기말 집중도:
+   분기 마지막 2주(15일)에 분기 전체 거래의 50% 이상 집중 → 기간귀속 위험
+   특히 매입·비용 거래의 분기말 집중: 이익 조정 의심
+
+3. 특정 사용자 속도:
+   동일 사용자가 1시간 내 10건 이상 입력 → 일괄 조작 의심
+
+탐지 SQL (분기말 집중 분석):
+```sql
+SELECT vendor_id,
+       SUM(CASE WHEN transaction_date >= DATE_TRUNC('quarter', CURRENT_DATE) + INTERVAL '75 days'
+                THEN amount ELSE 0 END) AS last_2weeks_amt,
+       SUM(amount) AS quarter_total_amt,
+       ROUND(100.0 * SUM(CASE WHEN transaction_date >= DATE_TRUNC('quarter', CURRENT_DATE) + INTERVAL '75 days'
+                              THEN amount ELSE 0 END) / NULLIF(SUM(amount), 0), 1) AS last2w_pct
+FROM   transactions
+WHERE  transaction_date >= DATE_TRUNC('quarter', CURRENT_DATE)
+GROUP  BY vendor_id
+HAVING ROUND(100.0 * SUM(CASE WHEN transaction_date >= DATE_TRUNC('quarter', CURRENT_DATE) + INTERVAL '75 days'
+                               THEN amount ELSE 0 END) / NULLIF(SUM(amount), 0), 1) > 50;
+```
+
+통제 방안:
+- 분기말 2주 거래 자동 플래그 및 추가 검토
+- 전기 동기 대비 2배 증가 시 부서장 확인 의무화

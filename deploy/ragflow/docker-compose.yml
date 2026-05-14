@@ -1,0 +1,112 @@
+# RAGflow v0.25 — document parsing/chunking layer only
+# We use RAGflow for: PDF layout parsing, table extraction, XML chunking
+# We do NOT use RAGflow's internal vector search — retrieval goes through our pgvector
+#
+# Usage:
+#   cp .env.example .env
+#   docker compose --profile elasticsearch up -d
+#   Open http://localhost:9380 → register admin → copy API key to .env
+
+services:
+  ragflow:
+    image: infiniflow/ragflow:v0.25.1
+    container_name: ragflow-server
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+      es01:
+        condition: service_healthy
+    ports:
+      - "9380:9380"    # HTTP API (우리가 호출하는 엔드포인트)
+      - "9381:9381"    # Admin API
+      - "19080:80"     # Web UI
+    environment:
+      TZ: Asia/Seoul
+      HF_ENDPOINT: ${HF_ENDPOINT:-https://huggingface.co}
+    volumes:
+      - ragflow_logs:/ragflow/logs
+    networks:
+      - ragflow
+
+  es01:
+    image: elasticsearch:8.11.3
+    container_name: ragflow-es
+    restart: always
+    profiles: ["elasticsearch"]
+    environment:
+      - node.name=es01
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-infini_rag_flow}
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -u elastic:${ELASTIC_PASSWORD:-infini_rag_flow} http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\\|yellow\"'"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+    volumes:
+      - esdata01:/usr/share/elasticsearch/data
+    networks:
+      - ragflow
+
+  mysql:
+    image: mysql:8.0.39
+    container_name: ragflow-mysql
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-infini_rag_flow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-infini_rag_flow}
+      MYSQL_DATABASE: rag_flow
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - ragflow
+
+  minio:
+    image: pgsty/minio:RELEASE.2026-03-25T00-00-00Z
+    container_name: ragflow-minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER:-rag_flow}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-infini_rag_flow}
+    ports:
+      - "19001:9001"   # MinIO Console (선택, 파일 확인용)
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - ragflow
+
+  redis:
+    image: valkey/valkey:8
+    container_name: ragflow-redis
+    restart: always
+    command: valkey-server --requirepass ${REDIS_PASSWORD:-infini_rag_flow} --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - ragflow
+
+volumes:
+  esdata01:
+  mysql_data:
+  minio_data:
+  redis_data:
+  ragflow_logs:
+
+networks:
+  ragflow:
+    driver: bridge

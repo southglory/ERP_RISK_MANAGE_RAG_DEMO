@@ -1,0 +1,410 @@
+# Audit-AI 카탈로그 카테고리별 핵심 스펙 필드
+# 출처: Phase 0-1-c 자료조사. 톱 11 벤더 공식 데이터시트 기반.
+# 산출 단계: Phase 0-1-c (D1 확장)
+# 후속 사용: Phase 1 카탈로그 스키마 (Product 테이블의 카테고리별 spec JSONB 또는 분리 테이블)
+#
+# 참고:
+#   - PostgreSQL 친화 타입 사용 (varchar/int/numeric/boolean/text[]/enum)
+#   - _common 카테고리는 모든 카테고리에 공통 prepend 권장
+#   - 모델별 정확한 throughput·core 수치는 카탈로그 입력 시 최신 벤더 데이터시트 재확인 필수
+
+- category: _common
+  fields:
+    - name: vendor
+      type: varchar(64)
+      description: 벤더명
+      example: Cisco
+    - name: product_line
+      type: varchar(128)
+      description: 제품 라인/시리즈
+      example: Catalyst 9300
+    - name: model_sku
+      type: varchar(128)
+      description: 정확한 모델/SKU
+      example: C9300-48P-A
+    - name: end_of_sale_date
+      type: date
+      description: EOS 일자
+    - name: end_of_support_date
+      type: date
+      description: EOL/지원 종료
+    - name: kc_certified
+      type: boolean
+      description: KC 전파/안전 인증 보유
+    - name: cc_certified
+      type: boolean
+      description: 국정원 CC인증/보안기능확인서 보유
+    - name: gov_procurement_id
+      type: varchar(64)
+      description: 나라장터 식별번호 (공공조달 등록 SKU)
+    - name: kr_specific_sku
+      type: varchar(128)
+      description: 한국 법인 별도 등록 SKU (글로벌 모델과 구분)
+    - name: csap_grade
+      type: enum[none, low, mid, high]
+      description: 클라우드보안인증(CSAP) 등급
+    - name: kr_lead_time_weeks
+      type: int
+      description: 한국 도착 평균 리드타임 (주)
+      example: 8
+
+- category: 네트워크 스위치
+  fields:
+    - name: port_count
+      type: int
+      description: 총 포트 수
+      example: 48
+    - name: port_speed_gbps
+      type: enum[1, 2.5, 5, 10, 25, 40, 100, 400]
+      description: 액세스 포트 속도
+      example: 1
+    - name: uplink_port_spec
+      type: varchar(64)
+      description: 업링크 포트 구성
+      example: "4x10G SFP+"
+    - name: poe_support
+      type: enum[none, poe, poe_plus, poe_pp, upoe]
+      description: PoE 지원 등급 (PoE/PoE+/PoE++/UPOE)
+    - name: poe_budget_w
+      type: int
+      description: PoE 총 전력 예산(W)
+      example: 1100
+    - name: stackable
+      type: boolean
+      description: 스태킹 지원
+    - name: stack_bandwidth_gbps
+      type: int
+      description: 스택 대역폭 (Gbps)
+      example: 1000
+    - name: layer
+      type: enum[L2, L2+, L3]
+      description: 스위칭 레이어
+    - name: switching_capacity_gbps
+      type: numeric
+      description: 스위칭 용량 (Gbps, full-duplex)
+    - name: forwarding_rate_mpps
+      type: numeric
+      description: 포워딩 레이트 (Mpps)
+    - name: mac_table_size
+      type: int
+      description: MAC 테이블 엔트리 수
+    - name: power_supply_redundant
+      type: boolean
+      description: PSU 이중화
+    - name: form_factor_ru
+      type: numeric
+      description: 랙 유닛(U)
+      example: 1
+    - name: license_tier
+      type: varchar(64)
+      description: 라이선스 등급
+      example: "Network Advantage / DNA Advantage"
+    - name: management
+      type: varchar(64)
+      description: 관리 방식
+      example: "On-prem CLI / Meraki Cloud / DNA Center"
+
+- category: 서버_랙
+  fields:
+    - name: form_factor
+      type: enum[rack, tower, blade, edge]
+      description: 폼팩터
+    - name: rack_units
+      type: int
+      description: 랙 유닛(U)
+      example: 2
+    - name: cpu_socket_count
+      type: int
+      description: CPU 소켓 수
+      example: 2
+    - name: cpu_family
+      type: varchar(64)
+      description: CPU 패밀리/세대
+      example: "Intel Xeon Scalable 5th Gen (Emerald Rapids)"
+    - name: cpu_max_cores_per_socket
+      type: int
+      description: 소켓당 최대 코어
+      example: 64
+    - name: memory_type
+      type: enum[ddr4, ddr5]
+      description: 메모리 유형
+    - name: memory_slot_count
+      type: int
+      description: DIMM 슬롯 수
+      example: 32
+    - name: max_memory_gb
+      type: int
+      description: 최대 메모리(GB)
+      example: 8192
+    - name: drive_bay_count
+      type: int
+      description: 드라이브 베이 수
+      example: 24
+    - name: drive_form_factor
+      type: enum[2.5_sas, 2.5_sata, 2.5_nvme, 3.5_sata, e3.s, e1.s]
+      description: 드라이브 폼팩터
+    - name: psu_redundant
+      type: boolean
+      description: 전원 이중화 (1+1 등)
+    - name: psu_max_watt
+      type: int
+      description: PSU 최대 와트
+      example: 2800
+    - name: gpu_support
+      type: varchar(128)
+      description: GPU 지원 구성
+      example: "최대 2x DW or 6x SW"
+    - name: oob_management
+      type: varchar(64)
+      description: 원격관리 컨트롤러
+      example: "iDRAC9 / iLO6 / IMM2"
+    - name: liquid_cooling
+      type: boolean
+      description: 직접 수냉 옵션
+
+- category: 스토리지_어레이
+  fields:
+    - name: array_type
+      type: enum[all_flash, hybrid, hdd, object]
+      description: 어레이 유형
+    - name: protocol
+      type: text[]
+      description: 지원 프로토콜
+      example: ["fc", "iscsi", "nvme_tcp", "nvme_fc", "nfs", "smb", "s3"]
+    - name: controller_count
+      type: int
+      description: 컨트롤러 수 (HA 페어 보통 2)
+      example: 2
+    - name: max_drive_count
+      type: int
+      description: 최대 드라이브 수
+      example: 480
+    - name: raw_capacity_tb
+      type: numeric
+      description: 최대 원시 용량(TB)
+    - name: effective_capacity_tb
+      type: numeric
+      description: 효율(중복제거·압축) 적용 효과 용량(TB)
+      example: 14680
+    - name: media_type
+      type: enum[tlc_ssd, qlc_ssd, scm, nvme_ssd, sas_hdd]
+      description: 미디어 유형
+    - name: iops_max
+      type: int
+      description: 최대 IOPS (벤더 공시치)
+    - name: latency_ms_avg
+      type: numeric
+      description: 평균 지연(ms)
+    - name: dedup_compression
+      type: boolean
+      description: 중복제거/압축 지원
+    - name: replication
+      type: text[]
+      description: 복제 방식
+      example: ["sync", "async", "metro"]
+    - name: snapshot_support
+      type: boolean
+      description: 스냅샷 지원
+    - name: immutable_snapshot
+      type: boolean
+      description: 불변(WORM) 스냅샷
+    - name: management_sw
+      type: varchar(64)
+      description: 관리 SW
+      example: "ONTAP 9.x / PowerStoreOS / Unisphere"
+
+- category: 방화벽_NGFW
+  fields:
+    - name: throughput_gbps
+      type: numeric
+      description: 방화벽 처리량(Gbps, IMIX 또는 1518B 기준 명시)
+    - name: throughput_test_basis
+      type: varchar(32)
+      description: 처리량 측정 기준
+      example: "1518/512/64 byte UDP"
+    - name: ips_throughput_gbps
+      type: numeric
+      description: IPS 처리량(Gbps)
+    - name: threat_protection_throughput_gbps
+      type: numeric
+      description: 위협방지(IPS+AV+App-ID) 처리량
+    - name: ssl_inspection_throughput_gbps
+      type: numeric
+      description: SSL 인스펙션 처리량
+    - name: vpn_throughput_gbps
+      type: numeric
+      description: IPsec VPN 처리량
+    - name: concurrent_sessions
+      type: bigint
+      description: 동시 세션 수
+    - name: new_sessions_per_sec
+      type: int
+      description: 초당 신규 세션
+    - name: interface_spec
+      type: text
+      description: 인터페이스 구성
+      example: "16x GE RJ45, 8x SFP+, 4x SFP28"
+    - name: ha_support
+      type: enum[none, active_passive, active_active]
+      description: HA 모드
+    - name: form_factor
+      type: enum[desktop, 1u, 2u, chassis, virtual]
+      description: 폼팩터
+    - name: subscription_tier
+      type: varchar(64)
+      description: 구독 번들
+      example: "Threat Prevention / ATP / SD-WAN"
+    - name: max_vdom_vsys
+      type: int
+      description: 가상 도메인/VSYS 수
+    - name: cc_eal_level
+      type: varchar(16)
+      description: CC 인증 EAL 레벨
+      example: "EAL4+"
+
+- category: 백업_SW
+  fields:
+    - name: edition
+      type: varchar(64)
+      description: 에디션
+      example: "Foundation / Advanced / Premium"
+    - name: licensing_unit
+      type: enum[per_socket, per_vm, per_instance, per_workload, per_tb, per_user]
+      description: 라이선스 단위
+    - name: protected_workload_types
+      type: text[]
+      description: 보호 워크로드
+      example: ["vmware", "hyper_v", "physical_win", "physical_linux", "aws_ec2", "azure_vm", "k8s", "m365", "oracle", "sap_hana"]
+    - name: repository_types
+      type: text[]
+      description: 저장소 유형
+      example: ["windows", "linux_hardened", "smb", "nfs", "dedup_appliance", "s3", "tape"]
+    - name: immutability
+      type: boolean
+      description: 불변성(랜섬웨어 방어) 지원
+    - name: dr_support
+      type: boolean
+      description: DR 오케스트레이션 (테스트/페일오버)
+    - name: dedup
+      type: boolean
+      description: 소스/타겟 중복제거
+    - name: instances_supported
+      type: int
+      description: 라이선스당 보호 인스턴스 수
+    - name: ransomware_warranty
+      type: boolean
+      description: 랜섬웨어 워런티 포함
+
+- category: 가상화
+  fields:
+    - name: hypervisor_type
+      type: enum[type1_bare_metal, type2_hosted]
+      description: 하이퍼바이저 유형
+    - name: edition
+      type: varchar(64)
+      description: 에디션 / 번들
+      example: "VVF / VCF / Standard / Enterprise Plus"
+    - name: licensing_unit
+      type: enum[per_core, per_cpu, per_user, per_vm]
+      description: 라이선스 단위
+    - name: core_pack_size
+      type: int
+      description: 코어팩 단위
+      example: 32
+    - name: min_cores_per_cpu
+      type: int
+      description: CPU당 최소 코어 라이선스
+      example: 16
+    - name: cluster_features
+      type: text[]
+      description: 클러스터 기능
+      example: ["ha", "drs", "vmotion", "ft", "vsan", "nsx"]
+    - name: max_hosts_per_cluster
+      type: int
+      description: 클러스터당 최대 호스트
+    - name: max_vms_per_host
+      type: int
+      description: 호스트당 최대 VM
+    - name: vsan_entitlement_tib_per_core
+      type: numeric
+      description: 코어당 vSAN 엔타이틀먼트(TiB)
+      example: 0.25
+    - name: included_components
+      type: text[]
+      description: 번들 포함 컴포넌트
+      example: ["vsphere", "vcenter", "vsan", "nsx", "aria"]
+
+- category: DB_SW
+  fields:
+    - name: engine_type
+      type: enum[rdbms, nosql_document, nosql_kv, columnar, graph, vector, timeseries]
+      description: 엔진 유형
+    - name: edition
+      type: varchar(64)
+      description: 에디션
+      example: "Enterprise / Standard / Standard Edition 2 / Web / Express"
+    - name: licensing_unit
+      type: enum[per_core, per_processor, per_named_user, per_server, byol_cloud]
+      description: 라이선스 단위
+    - name: core_factor
+      type: numeric
+      description: 코어 팩터 (Oracle 등)
+      example: 0.5
+    - name: ha_features
+      type: text[]
+      description: HA/DR 기능
+      example: ["always_on_ag", "rac", "data_guard", "log_shipping"]
+    - name: partitioning
+      type: boolean
+      description: 파티셔닝 지원 (별도 옵션 가능)
+    - name: encryption_tde
+      type: boolean
+      description: 투명 데이터 암호화(TDE)
+    - name: vector_search
+      type: boolean
+      description: 벡터 검색 내장 (AI 워크로드)
+    - name: cloud_native_support
+      type: text[]
+      description: 클라우드 네이티브 옵션
+      example: ["aws_rds", "azure_sql_mi", "oci_base_db", "exadata_cloud"]
+    - name: max_db_size_tb
+      type: numeric
+      description: 에디션별 최대 DB 크기(TB)
+
+- category: 협업_SW
+  fields:
+    - name: deployment_model
+      type: enum[saas, on_prem, hybrid]
+      description: 배포 모델
+    - name: licensing_unit
+      type: enum[per_user, per_device, per_room, flat]
+      description: 라이선스 단위
+    - name: edition
+      type: varchar(64)
+      description: 플랜
+      example: "M365 E3 / E5 / Business Standard / Webex Suite"
+    - name: included_apps
+      type: text[]
+      description: 포함 앱
+      example: ["mail", "im", "meeting", "calling", "files", "office_apps"]
+    - name: storage_per_user_gb
+      type: int
+      description: 사용자당 스토리지(GB)
+      example: 100
+    - name: meeting_capacity
+      type: int
+      description: 회의 최대 참석자
+    - name: meeting_minutes
+      type: int
+      description: 월 회의 분/통화 분
+    - name: integration_endpoints
+      type: text[]
+      description: 연동 엔드포인트
+      example: ["outlook", "teams_room", "webex_device", "sso_saml"]
+    - name: data_residency_kr
+      type: boolean
+      description: 한국 데이터 거주성 보장
+    - name: compliance_certs
+      type: text[]
+      description: 컴플라이언스 인증
+      example: ["isms_p", "soc2", "iso27001", "csap"]

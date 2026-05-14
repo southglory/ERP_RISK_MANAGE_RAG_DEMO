@@ -1,0 +1,60 @@
+services:
+  vllm:
+    image: vllm/vllm-openai:latest
+    restart: unless-stopped
+    ipc: host
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ${HF_CACHE:-hf_cache}:/root/.cache/huggingface
+    command: >
+      --model TheBloke/SOLAR-10.7B-Instruct-v1.0-AWQ
+      --quantization awq_marlin
+      --gpu-memory-utilization ${GPU_UTIL:-0.55}
+      --max-model-len 4096
+      --kv-cache-dtype fp8
+      --max-num-batched-tokens 4096
+      --max-num-seqs 16
+      --served-model-name solar-10.7b-instruct
+      --host 0.0.0.0
+      --port 8000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  infinity:
+    image: michaelf34/infinity:latest
+    restart: unless-stopped
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+    ports:
+      - "8001:7997"
+    volumes:
+      - ${HF_CACHE:-hf_cache}:/app/.cache
+    command: >
+      v2
+      --model-id BAAI/bge-m3
+      --served-model-name bge-m3
+      --model-id BAAI/bge-reranker-v2-m3
+      --served-model-name bge-reranker-v2-m3
+      --port 7997
+      --batch-size 32
+      --device cuda
+      --engine torch
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  hf_cache:

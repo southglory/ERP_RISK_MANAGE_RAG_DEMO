@@ -1,0 +1,38 @@
+# 내부감사 부정탐지 — 중복 거래 감지
+
+내부감사 부정탐지 기법: 중복 거래(Duplicate Transaction) 감지
+
+개념:
+동일한 거래를 두 번 이상 처리해 이중 지급하거나 수익을 과대 계상하는 부정 유형.
+주요 유형:
+- 동일 세금계산서 번호 복수 처리
+- 동일 금액·동일 벤더·동일 날짜 복수 건
+- 유사 금액·유사 날짜(±1~3일)·동일 벤더
+
+탐지 SQL:
+```sql
+-- 완전 중복: 동일 금액 + 동일 벤더 + 동일 날짜
+SELECT vendor_id, amount, DATE(transaction_date) AS tdate, COUNT(*) AS dup_cnt
+FROM   ap_transactions
+GROUP  BY vendor_id, amount, DATE(transaction_date)
+HAVING COUNT(*) >= 2;
+
+-- 유사 중복: 동일 금액 + 동일 벤더 + 날짜 ±3일
+SELECT a.txn_id, b.txn_id AS dup_txn_id, a.vendor_id, a.amount
+FROM   ap_transactions a
+JOIN   ap_transactions b
+  ON   a.vendor_id = b.vendor_id
+  AND  a.amount    = b.amount
+  AND  ABS(EXTRACT(DAY FROM a.transaction_date - b.transaction_date)) <= 3
+  AND  a.txn_id < b.txn_id;
+```
+
+위험 지표:
+- 동일 세금계산서 번호 2회 이상 입력
+- 동일 금액 · 동일 벤더 · 동일 날짜 복수 건
+- 역분개(Reversal) 없이 동일 거래 재처리
+
+통제 방안:
+- ERP에서 세금계산서 번호 중복 방지 로직 구현
+- AP 입력 시 자동 중복 스캔 후 경고 표시
+- 월 마감 전 중복 거래 보고서 정기 발행

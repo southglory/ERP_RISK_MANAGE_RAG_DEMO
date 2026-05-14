@@ -1,0 +1,185 @@
+services:
+  # ── 우리 메인 DB: pgvector + 리니지 스키마 ────────────────────────────────
+  playground-db:
+    image: pgvector/pgvector:pg16
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U playground -d playground"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: playground
+      POSTGRES_PASSWORD: playground
+      POSTGRES_DB: playground
+    volumes:
+      - playground_db_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+
+  # ── Langfuse v3 인프라 ────────────────────────────────────────────────────
+  langfuse-db:
+    image: postgres:16-alpine
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse -d langfuse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+    volumes:
+      - langfuse_db_data:/var/lib/postgresql/data
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.12-alpine
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --user clickhouse --password clickhouse --query 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+    environment:
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+      CLICKHOUSE_DB: default
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml:ro
+      - ./clickhouse/keeper.xml:/etc/clickhouse-server/config.d/keeper.xml:ro
+    ports:
+      - "8123:8123"   # HTTP API (선택적 노출)
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: always
+    environment:
+      MINIO_ROOT_USER: langfuse
+      MINIO_ROOT_PASSWORD: langfuse_minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # 웹 콘솔
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    restart: on-failure
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+        sleep 5;
+        mc alias set local http://minio:9000 langfuse langfuse_minio;
+        mc mb --ignore-existing local/langfuse-events;
+        mc mb --ignore-existing local/laws;
+        echo 'buckets ready';
+      "
+
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3
+    restart: always
+    env_file:
+      - ../../.env          # 프로젝트 루트 .env → LANGFUSE_PUBLIC_KEY 등 로딩
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:clickhouse@clickhouse:9000/default
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+      REDIS_CONNECTION_STRING: redis://redis:6379
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      SALT: playground_salt_change_in_prod
+      NEXTAUTH_SECRET: playground_nextauth_secret_change_in_prod
+      LANGFUSE_S3_EVENT_UPLOAD_ENABLED: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse-events
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: us-east-1
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: langfuse_minio
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_ENABLED: "false"
+      # ── 자동 초기화 (최초 기동 시 org/project/키 자동 생성) ──────────────
+      LANGFUSE_INIT_ORG_ID: "playground-org"
+      LANGFUSE_INIT_ORG_NAME: "AI Playground"
+      LANGFUSE_INIT_PROJECT_ID: "playground-project"
+      LANGFUSE_INIT_PROJECT_NAME: "ERP Risk Manage"
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-playground}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-playground}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_USER_EMAIL:-admin@playground.local}
+      LANGFUSE_INIT_USER_NAME: "Admin"
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_USER_PASSWORD:-playground123}
+
+  langfuse-server:
+    image: langfuse/langfuse:3
+    restart: always
+    env_file:
+      - ../../.env          # 프로젝트 루트 .env → LANGFUSE_PUBLIC_KEY 등 로딩
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      langfuse-worker:
+        condition: service_started
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:clickhouse@clickhouse:9000/default
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+      REDIS_CONNECTION_STRING: redis://redis:6379
+      NEXTAUTH_SECRET: playground_nextauth_secret_change_in_prod
+      SALT: playground_salt_change_in_prod
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      NEXTAUTH_URL: http://localhost:3000
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_S3_EVENT_UPLOAD_ENABLED: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse-events
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: us-east-1
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: langfuse_minio
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_ENABLED: "false"
+      # ── 자동 초기화 ──────────────────────────────────────────────────────────
+      LANGFUSE_INIT_ORG_ID: "playground-org"
+      LANGFUSE_INIT_ORG_NAME: "AI Playground"
+      LANGFUSE_INIT_PROJECT_ID: "playground-project"
+      LANGFUSE_INIT_PROJECT_NAME: "ERP Risk Manage"
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-playground}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-playground}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_USER_EMAIL:-admin@playground.local}
+      LANGFUSE_INIT_USER_NAME: "Admin"
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_USER_PASSWORD:-playground123}
+
+volumes:
+  playground_db_data:
+  langfuse_db_data:
+  clickhouse_data:
+  minio_data:

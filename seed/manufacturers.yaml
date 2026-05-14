@@ -1,0 +1,69 @@
+# 벤더(제조사) 마스터 데이터
+# 출처: 주요 벤더 공식 사이트 및 산업 보고서 기반 구축
+# 후속 사용: Phase 1 카탈로그 시드 데이터, 리스크 탐지 시나리오 벤더 식별
+
+# 필드:
+#   name: 벤더명
+#   country: 본사 국가
+#   primary_categories: 주력 기술 영역
+#   notes: 주요 솔루션 및 특징
+
+- name: HPE
+  country: USA
+  primary_categories: [서버, 스토리지, 네트워크]
+  notes: "엔터프라이즈 인프라 솔루션. 서버/스토리지 글로벌 리더."
+
+- name: Aruba Networks (HPE)
+  country: USA
+  primary_categories: [네트워크]
+  notes: "무선 LAN 및 엣지 네트워크 전문."
+
+- name: Cisco
+  country: USA
+  primary_categories: [네트워크, 보안, 협업]
+  notes: "네트워크 및 보안 솔루션 전 세계 1위."
+
+- name: Oracle
+  country: USA
+  primary_categories: [데이터베이스, 운영체제, 서버]
+  notes: "글로벌 상용 RDBMS 시장 1위. 클라우드 및 하드웨어 통합 솔루션."
+
+- name: VMware (Broadcom)
+  country: USA
+  primary_categories: [가상화]
+  notes: "가상화 인프라 및 프라이빗 클라우드 표준 솔루션."
+
+- name: Red Hat (IBM)
+  country: USA
+  primary_categories: [운영체제, 가상화, 데이터베이스]
+  notes: "오픈소스 엔터프라이즈 솔루션 (RHEL/OpenShift)."
+
+- name: AWS
+  country: USA
+  primary_categories: [퍼블릭클라우드]
+  notes: "전 세계 1위 퍼블릭 클라우드 서비스 제공업체."
+
+- name: Microsoft
+  country: USA
+  primary_categories: [운영체제, 협업, 퍼블릭클라우드, 데이터베이스]
+  notes: "Windows, Office, Azure를 아우르는 엔터프라이즈 소프트웨어 강자."
+
+- name: NetApp
+  country: USA
+  primary_categories: [스토리지, 백업]
+  notes: "스토리지 및 데이터 관리 전문 솔루션."
+
+- name: Dell Technologies
+  country: USA
+  primary_categories: [서버, 스토리지, 가상화]
+  notes: "엔터프라이즈 서버 및 스토리지 풀라인업 보유."
+
+- name: Nutanix
+  country: USA
+  primary_categories: [가상화, 서버]
+  notes: "HCI(Hyper-Converged Infrastructure) 분야 리더."
+
+- name: Fortinet
+  country: USA
+  primary_categories: [보안]
+  notes: "네트워크 보안 및 방화벽(FortiGate) 전문."

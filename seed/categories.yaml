@@ -1,0 +1,95 @@
+# Audit-AI 카탈로그 카테고리 트리
+# 출처: 한국 디스트리뷰션 시장 표준 하위 분류
+# 산출 단계: Phase 0-1-a (D1 확장)
+# 후속 사용: Phase 1 카탈로그 스키마 (Manufacturer/Product/Category) 카테고리 트리 시드
+
+- name: 네트워크
+  subcategories:
+    - 스위치
+    - 라우터
+    - 무선랜(WiFi/AP)
+    - SD-WAN
+    - 로드밸런서(ADC)
+    - 네트워크 모니터링/APM
+    - 광 전송(Optical/WDM)
+
+- name: 서버
+  subcategories:
+    - 랙 서버
+    - 타워 서버
+    - 블레이드 서버
+    - 하이퍼컨버지드(HCI)
+    - 엣지/마이크로서버
+    - GPU 서버(AI)
+
+- name: 스토리지
+  subcategories:
+    - SAN(블록)
+    - NAS(파일)
+    - 오브젝트 스토리지
+    - 올플래시 어레이
+    - 하이브리드 스토리지
+    - 백업 어플라이언스
+    - 분산/스케일아웃 스토리지
+
+- name: 가상화
+  subcategories:
+    - 서버 가상화(하이퍼바이저)
+    - 데스크톱 가상화(VDI)
+    - 컨테이너/쿠버네티스
+    - 네트워크/스토리지 가상화(SDN/SDS)
+    - 클라우드 관리 플랫폼(CMP)
+
+- name: 운영체제
+  subcategories:
+    - 엔터프라이즈 리눅스
+    - 윈도우 서버
+    - 유닉스(AIX/HP-UX/Solaris)
+    - 한국형 OS(구름/티맥스OS)
+
+- name: 데이터베이스
+  subcategories:
+    - RDB(관계형)
+    - NoSQL(도큐먼트/KV/그래프)
+    - 인메모리 DB
+    - 분산/NewSQL
+    - 한국형 DBMS(티베로/알티베이스/큐브리드)
+    - 데이터 스트리밍/메시지(Kafka 계열)
+
+- name: 백업
+  subcategories:
+    - 백업 소프트웨어
+    - 백업 어플라이언스
+    - DR(재해복구)
+    - 이뮤터블/랜섬웨어 대응
+    - 클라우드 백업/BaaS
+    - 아카이브/장기보관
+
+- name: 보안
+  subcategories:
+    - NGFW/네트워크 보안
+    - EDR/EPP(엔드포인트)
+    - SIEM/SOAR
+    - 제로트러스트(ZTNA)
+    - 이메일/웹 보안
+    - SASE/SSE
+    - 취약점 진단/관리(VM)
+    - 데이터 보안/DLP
+    - 물리 보안(영상/출입통제)
+
+- name: 퍼블릭클라우드
+  subcategories:
+    - IaaS
+    - PaaS
+    - SaaS
+    - MSP(매니지드)
+    - 멀티클라우드 관리(CMP)
+    - FinOps/비용관리
+
+- name: 협업
+  subcategories:
+    - 통합커뮤니케이션(UC)
+    - 화상회의(Video Conferencing)
+    - 메신저/팀즈
+    - 문서/콘텐츠 관리(ECM/CMS)
+    - AV/회의실 솔루션

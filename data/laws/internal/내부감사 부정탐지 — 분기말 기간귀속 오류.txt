@@ -1,0 +1,37 @@
+# 내부감사 부정탐지 — 분기말 기간귀속 오류
+
+내부감사 부정탐지 기법: 분기말 기간귀속(Period Cut-off) 오류 감지
+
+개념:
+기간귀속이란 수익·비용을 올바른 회계 기간에 인식하는 원칙(발생주의).
+분기말에 다음 기간의 매출을 앞당기거나 이번 기간의 비용을 다음 기간으로 미루는 조작이 가능.
+
+주요 패턴:
+1. 가공매입 기간귀속 오류:
+   - 분기 마감일(3월 31일, 6월 30일 등) 기준 마지막 2주 내 매입 집중
+   - 실제 납품 없이 세금계산서만 수령 → 비용 과대 계상
+   - 다음 분기 초에 역분개(취소)하는 패턴 → '수정 거래' 증가
+
+2. 매출 조기 인식:
+   - 납기일 전에 인도 처리하여 매출 인식
+   - 검수 완료 전 청구서 발행
+
+위험 신호:
+- 분기 마지막 2주에 전체 분기 매입의 50% 이상 집중
+- 분기말 입력 거래 중 다음 분기 초 7일 내 수정(역분개) 비율 > 20%
+- 동일 벤더에서 분기말마다 반복적 고액 청구
+
+탐지 SQL (수정 거래 비율):
+```sql
+SELECT t.vendor_id, t.amount, t.transaction_date,
+       r.reversal_date, r.reversal_amount
+FROM   transactions t
+LEFT JOIN reversals r ON t.txn_id = r.original_txn_id
+WHERE  t.transaction_date >= DATE_TRUNC('quarter', t.transaction_date) + INTERVAL '75 days'
+  AND  r.reversal_date <= DATE_TRUNC('quarter', t.transaction_date) + INTERVAL '3 months' + INTERVAL '7 days';
+```
+
+감사 절차:
+1. 분기말 2주 매입 목록 추출
+2. 납품 확인서(물품 수령증) 현물 대사
+3. 다음 분기 초 수정 거래 일치 여부 확인

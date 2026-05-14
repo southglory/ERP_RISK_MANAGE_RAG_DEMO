@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "erp-risk-playground"
+version = "0.1.0"
+description = "AI 회계·감사 Playground — K-IFRS 룰엔진, 재무 부정 탐지, 세무 리스크 RAG"
+requires-python = ">=3.11"
+dependencies = [
+    "openai>=1.30",
+    "langchain>=0.3",
+    "langgraph>=0.2",
+    "langfuse>=2.0",
+    "openinference-instrumentation-langchain>=0.1",
+    "opentelemetry-sdk>=1.24",
+    "asyncpg>=0.29",
+    "pgvector>=0.3",
+    "pymilvus>=2.4,<3.0",
+    "httpx>=0.27",
+    "pyyaml>=6.0",
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+    "lxml>=5.0",
+    "cryptography>=42.0",
+]
+
+[project.optional-dependencies]
+ui = [
+    "PySide6>=6.7",
+    "qt-material>=2.14",
+    "qasync>=0.27",
+]
+eval = [
+    "ragas>=0.2",
+    "datasets>=2.20",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

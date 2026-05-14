@@ -1,0 +1,52 @@
+# config/tax_rules.yaml — Phase 6C: risk_graph.py 의 하드코딩 룰 외부화
+
+# Tier 1: 계정코드 prefix + 금액 임계값
+account_rules:
+  - rule_id: WH-001
+    account_prefixes: ["521", "522", "523"]
+    min_amount: 330000
+    severity: medium
+    detail: "외부 용역비(52x 계정) 33만 원 이상 — 원천징수(3.3%~22%) 대상 여부 확인"
+  - rule_id: VAT-001
+    account_prefixes: ["531", "532"]
+    min_amount: 0
+    severity: low
+    detail: "광고·마케팅비(53x 계정) — 매입세액공제 요건 확인"
+  - rule_id: WH-002
+    account_prefixes: ["561", "562"]
+    min_amount: 0
+    severity: medium
+    detail: "클라우드·SaaS 사용료(56x 계정) — 해외 공급자 부가세 역발행 여부 확인"
+
+# Tier 2: 날짜 기반 컷오프
+cutoff:
+  rule_id: CUT-001
+  day_threshold: 25
+  account_prefixes: ["511", "512", "521", "522", "531", "541"]
+  severity: medium
+
+# Tier 3: 거래처 마스터 기반
+vendor_rules:
+  - rule_id: VEN-001
+    vendor_type: overseas
+    severity: high
+    detail: "해외 법인 거래 — 비거주자 원천징수(22%) 및 조세조약 적용 여부 확인"
+  - rule_id: VEN-002
+    vendor_type: unregistered
+    severity: high
+    detail: "미등록 거래처 — 적격 증빙(세금계산서) 미수취 시 매입세액공제 불인정 및 가산세"
+
+# RAG 쿼리 매핑 (flag/rule_id → 쿼리 텍스트)
+flag_to_query:
+  duplicate_txn:        "중복 거래 탐지 내부통제 기준"
+  just_below_threshold: "결재 한도 직하 분할 결제 부정 탐지"
+  off_hours:            "비업무 시간대 거래 내부감사 통제"
+  round_number_bias:    "라운드 넘버 편향 회계 조작 탐지"
+  velocity_spike:       "단기 과다 거래 속도 이상 탐지"
+  benford_deviation:    "벤포드 법칙 이탈 재무 부정 탐지"
+  WH-001:               "외부 용역비 원천징수 세율 기준"
+  WH-002:               "클라우드 SaaS 해외 공급자 부가세 역발행"
+  VAT-001:              "광고비 매입세액공제 요건"
+  CUT-001:              "기간귀속 분기말 컷오프 회계 처리"
+  VEN-001:              "해외 법인 비거주자 원천징수 세율 기준"
+  VEN-002:              "적격증빙 미수취 가산세 법인세법"

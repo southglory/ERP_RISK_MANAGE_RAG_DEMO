@@ -1,0 +1,65 @@
+# ERPNext — Frappe/ERPNext OSS (GPLv3)
+# Accessed via REST API only from core/ — GPL boundary maintained
+# Docs: https://github.com/frappe/frappe_docker
+
+services:
+  erpnext:
+    image: frappe/erpnext:v15
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis-cache:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: "3306"
+      REDIS_CACHE: redis-cache:6379
+      REDIS_QUEUE: redis-queue:6379
+      SOCKETIO_PORT: "9000"
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
+
+  mariadb:
+    image: mariadb:10.11
+    restart: always
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      MYSQL_ROOT_PASSWORD: erpnext_root
+      MYSQL_USER: erpnext
+      MYSQL_PASSWORD: erpnext
+      MYSQL_DATABASE: erpnext
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+
+  redis-cache:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_cache_data:/data
+
+  redis-queue:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_queue_data:/data
+
+volumes:
+  erpnext_sites:
+  erpnext_logs:
+  mariadb_data:
+  redis_cache_data:
+  redis_queue_data:
