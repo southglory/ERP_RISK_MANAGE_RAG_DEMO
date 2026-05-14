@@ -4,11 +4,11 @@
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
 [![Framework: LangGraph](https://img.shields.io/badge/Framework-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
 
-**"AI 가 만든 답을 사람이 검증할 수 있는가?"**에 대한 기술적 해답.
+**AI 가 만든 답을 사람이 검증할 수 있는가** 에 대한 기술적 해답.
 
 본 프로젝트는 ERP 의 정형 데이터(재무·회계)와 법령·판례의 비정형 데이터를 결합하여, 모든 결정의 근거를 역추적(Lineage) 할 수 있는 **신뢰할 수 있는 AI 회계·감사 에이전트 시스템**입니다. 
 
-344개의 엄격한 테스트 케이스를 통과한 정밀 룰 엔진과 최신 BGE-M3 모델 기반의 하이브리드 RAG를 결합하여 실무급 신뢰도를 확보했습니다.
+344개의 테스트 케이스를 통과한 정밀 룰 엔진과 최신 BGE-M3 모델 기반의 하이브리드 RAG를 결합해, 실무에 적용 가능한 수준의 신뢰성을 목표로 구성했습니다.
 
 ---
 
@@ -88,7 +88,7 @@ python scripts/run_simulation.py --n 20
 
 ## 📚 Technical Insights (16-Part Blog Series)
 
-본 프로젝트의 탄생부터 최종 최적화까지의 치열한 고민은 **총 16편의 상세 기술 블로그**에 기록되어 있습니다.
+본 프로젝트의 설계부터 최적화까지의 과정은 **총 16편의 기술 블로그**에 정리되어 있습니다.
 
 - **[RAG 최적화 연재 시리즈 전체 보기](https://southglory.github.io/tags/rag/)**
 
