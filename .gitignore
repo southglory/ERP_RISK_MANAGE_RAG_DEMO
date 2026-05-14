@@ -1,7 +1,4 @@
 # Custom Project Specific Ignores
-results/*.png
-!results/리스크탐지0.png
-!results/리스크탐지1_rag포함.png
 results/*.json
 *.log
 temp/
